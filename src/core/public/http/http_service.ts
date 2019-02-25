@@ -28,59 +28,75 @@ import {
   tap,
 } from 'rxjs/operators';
 
+import { CoreService } from 'src/core/types';
 import { FatalErrorsStartContract } from '../fatal_errors';
+import { OperationCanceledException } from 'typescript';
 
 interface Deps {
   fatalErrors: FatalErrorsStartContract;
 }
 
-export class HttpService {
+export class HttpService implements CoreService<HttpStartContract> {
+  private hasStarted = false;
   private readonly loadingCount$ = new Rx.BehaviorSubject(0);
   private readonly stop$ = new Rx.Subject();
+  private readonly fatalErrors: FatalErrorsStartContract;
 
-  public start({ fatalErrors }: Deps) {
-    return {
-      addLoadingCount: (count$: Rx.Observable<number>) => {
-        count$
-          .pipe(
-            distinctUntilChanged(),
-
-            tap(count => {
-              if (count < 0) {
-                throw new Error(
-                  'Observables passed to loadingCount.add() must only emit positive numbers'
-                );
-              }
-            }),
-
-            // use takeUntil() so that we can finish each stream on stop() the same way we do when they complete,
-            // by removing the previous count from the total
-            takeUntil(this.stop$),
-            endWith(0),
-            startWith(0),
-            pairwise(),
-            map(([prev, next]) => next - prev)
-          )
-          .subscribe({
-            next: delta => {
-              this.loadingCount$.next(this.loadingCount$.getValue() + delta);
-            },
-            error: error => {
-              fatalErrors.add(error);
-            },
-          });
-      },
-
-      getLoadingCount$: () => {
-        return this.loadingCount$.pipe(distinctUntilChanged());
-      },
-    };
+  public constructor({ fatalErrors }: Deps) {
+    this.fatalErrors = fatalErrors;
   }
 
-  public stop() {
+  public async start() {
+    this.hasStarted = true;
+  }
+
+  public addLoadingCount(count$: Rx.Observable<number>) {
+    // A bit of a contrived example since this service doesn't need anything to be able to start
+    if (!this.hasStarted) {
+      throw new Error("HttpService not started")
+    }
+
+    count$
+      .pipe(
+        distinctUntilChanged(),
+
+        tap(count => {
+          if (count < 0) {
+            throw new Error(
+              'Observables passed to loadingCount.add() must only emit positive numbers'
+            );
+          }
+        }),
+
+        // use takeUntil() so that we can finish each stream on stop() the same way we do when they complete,
+        // by removing the previous count from the total
+        takeUntil(this.stop$),
+        endWith(0),
+        startWith(0),
+        pairwise(),
+        map(([prev, next]) => next - prev)
+      )
+      .subscribe({
+        next: delta => {
+          this.loadingCount$.next(this.loadingCount$.getValue() + delta);
+        },
+        error: error => {
+          this.fatalErrors.add(error);
+        },
+      });
+  }
+
+  public getLoadingCount$() {
+    return this.loadingCount$.pipe(distinctUntilChanged());
+  }
+
+  public async stop() {
     this.stop$.next();
     this.loadingCount$.complete();
   }
 }
 
-export type HttpStartContract = ReturnType<HttpService['start']>;
+export interface HttpStartContract {
+  addLoadingCount(count$: Rx.Observable<number>): void;
+  getLoadingCount$(): Rx.Observable<number>;
+}

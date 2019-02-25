@@ -19,6 +19,6 @@
 
 /** @internal */
 export interface CoreService<TStartContract = void> {
-  start(...params: any[]): Promise<TStartContract>;
+  start(...params: any[]): Promise<void>;
   stop(): Promise<void>;
 }

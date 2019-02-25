@@ -87,7 +87,7 @@ export class CoreSystem {
     this.notifications = new NotificationsService({
       targetDomElement: this.notificationsTargetDomElement,
     });
-    this.http = new HttpService();
+
     this.basePath = new BasePathService();
     this.uiSettings = new UiSettingsService();
     this.chrome = new ChromeService({ browserSupportsCsp });
@@ -112,7 +112,8 @@ export class CoreSystem {
       const notifications = this.notifications.start({ i18n });
       const injectedMetadata = this.injectedMetadata.start();
       const fatalErrors = this.fatalErrors.start({ i18n });
-      const http = this.http.start({ fatalErrors });
+      const http = new HttpService({ fatalErrors });
+      http.start();
       const basePath = this.basePath.start({ injectedMetadata });
       const uiSettings = this.uiSettings.start({
         notifications,
