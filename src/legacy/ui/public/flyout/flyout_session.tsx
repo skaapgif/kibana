@@ -50,16 +50,6 @@ function getOrCreateContainerElement() {
  */
 class FlyoutSession extends EventEmitter {
   /**
-   * Binds the current flyout session to an Angular scope, meaning this flyout
-   * session will be closed as soon as the Angular scope gets destroyed.
-   * @param {object} scope - An angular scope object to bind to.
-   */
-  public bindToAngularScope(scope: ng.IScope): void {
-    const removeWatch = scope.$on('$destroy', () => this.close());
-    this.on('closed', () => removeWatch());
-  }
-
-  /**
    * Closes the opened flyout as long as it's still the open one.
    * If this is not the active session anymore, this method won't do anything.
    * If this session was still active and a flyout was closed, the 'closed'

@@ -232,7 +232,8 @@ function VisEditor(
       return !vis.hasInspector || !vis.hasInspector();
     },
     run() {
-      vis.openInspector().bindToAngularScope($scope);
+      const removeWatch = $scope.$on('$destroy', vis.openInspector().close);
+      vis.openInspector().on('closed', removeWatch);
     },
     tooltip() {
       if (!vis.hasInspector || !vis.hasInspector()) {
