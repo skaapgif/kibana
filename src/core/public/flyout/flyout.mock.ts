@@ -16,27 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { FlyoutService, FlyoutServiceSetup } from './flyout';
 
-import { BasePathSetup } from './base_path';
-import { ChromeSetup } from './chrome';
-import { FatalErrorsSetup } from './fatal_errors';
-import { FlyoutSetup } from './flyout';
-import { HttpSetup } from './http';
-import { I18nSetup } from './i18n';
-import { InjectedMetadataSetup } from './injected_metadata';
-import { NotificationsSetup } from './notifications';
-import { UiSettingsSetup } from './ui_settings';
+const createSetupContractMock = () => {
+  const setupContract: jest.Mocked<FlyoutServiceSetup> = {
+    openFlyout: jest.fn(),
+  };
+  return setupContract;
+};
 
-export { CoreSystem } from './core_system';
+type FlyoutServiceContract = Pick<FlyoutService, 'setup' | 'stop'>;
 
-export interface CoreSetup {
-  i18n: I18nSetup;
-  injectedMetadata: InjectedMetadataSetup;
-  fatalErrors: FatalErrorsSetup;
-  notifications: NotificationsSetup;
-  http: HttpSetup;
-  basePath: BasePathSetup;
-  uiSettings: UiSettingsSetup;
-  chrome: ChromeSetup;
-  flyout: FlyoutSetup;
-}
+const createMock = () => {
+  const mocked: jest.Mocked<FlyoutServiceContract> = {
+    setup: jest.fn(),
+    stop: jest.fn(),
+  };
+  mocked.setup.mockReturnValue(createSetupContractMock());
+  return mocked;
+};
+
+export const FlyoutServiceMock = {
+  create: createMock,
+  createSetupContract: createSetupContractMock,
+};

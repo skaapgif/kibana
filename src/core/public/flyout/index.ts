@@ -17,26 +17,4 @@
  * under the License.
  */
 
-import { BasePathSetup } from './base_path';
-import { ChromeSetup } from './chrome';
-import { FatalErrorsSetup } from './fatal_errors';
-import { FlyoutSetup } from './flyout';
-import { HttpSetup } from './http';
-import { I18nSetup } from './i18n';
-import { InjectedMetadataSetup } from './injected_metadata';
-import { NotificationsSetup } from './notifications';
-import { UiSettingsSetup } from './ui_settings';
-
-export { CoreSystem } from './core_system';
-
-export interface CoreSetup {
-  i18n: I18nSetup;
-  injectedMetadata: InjectedMetadataSetup;
-  fatalErrors: FatalErrorsSetup;
-  notifications: NotificationsSetup;
-  http: HttpSetup;
-  basePath: BasePathSetup;
-  uiSettings: UiSettingsSetup;
-  chrome: ChromeSetup;
-  flyout: FlyoutSetup;
-}
+export * from './flyout';

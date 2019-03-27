@@ -17,4 +17,40 @@
  * under the License.
  */
 
-export * from './flyout_session';
+import { shallow } from 'enzyme';
+import React from 'react';
+import FlyoutService from './index';
+
+jest.mock('@elastic/eui', () => {
+  return {
+    EuiContext: function MockEuiContext() {
+      // no-op
+    },
+  };
+});
+
+jest.mock('@kbn/i18n/react', () => {
+  return {
+    I18nProvider: function MockI18nProvider() {
+      // no-op
+    },
+  };
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+  jest.resetModules();
+});
+
+describe('FlyoutService', () => {
+  describe('#setup()', () => {
+    it('returns `Context` component', () => {
+      const i18nService = new I18nService();
+
+      const i18n = i18nService.setup();
+
+      expect(shallow(<i18n.Context>content</i18n.Context>)).toMatchSnapshot();
+    });
+  });
+});
+
