@@ -33,7 +33,10 @@ export class UiSettingsService {
   private uiSettingsApi?: UiSettingsApi;
   private uiSettingsClient?: UiSettingsClient;
 
-  public setup({ http, injectedMetadata }: UiSettingsServiceDeps): UiSettingsSetup {
+  public setup({
+    http,
+    injectedMetadata,
+  }: UiSettingsServiceDeps): PublicMethodsOf<UiSettingsSetup> {
     this.uiSettingsApi = new UiSettingsApi(http);
     http.addLoadingCount(this.uiSettingsApi.getLoadingCount$());
 
