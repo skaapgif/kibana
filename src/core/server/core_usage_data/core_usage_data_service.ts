@@ -23,7 +23,11 @@ import { takeUntil } from 'rxjs/operators';
 import { CoreService } from 'src/core/types';
 import { SavedObjectsServiceStart } from 'src/core/server';
 import { CoreContext } from '../core_context';
-import { CoreUsageStatsClient, CoreUsageStatsServiceSetup } from '../core_usage_stats';
+import {
+  CoreUsageStatsClient,
+  CoreUsageStatsService,
+  CoreUsageStatsServiceSetup,
+} from '../core_usage_stats';
 import { ElasticsearchConfigType } from '../elasticsearch/elasticsearch_config';
 import { HttpConfigType } from '../http';
 import { LoggingConfigType } from '../logging';
@@ -36,7 +40,7 @@ import { MetricsServiceSetup, OpsMetrics } from '..';
 
 export interface SetupDeps {
   metrics: MetricsServiceSetup;
-  coreUsageStats: CoreUsageStatsServiceSetup;
+  savedObjectsStartPromise: Promise<SavedObjectsServiceStart>;
 }
 
 export interface StartDeps {
@@ -62,7 +66,9 @@ const kibanaOrTaskManagerIndex = (index: string, kibanaConfigIndex: string) => {
   return index === kibanaConfigIndex ? '.kibana' : '.kibana_task_manager';
 };
 
-export class CoreUsageDataService implements CoreService<void, CoreUsageDataStart> {
+export class CoreUsageDataService
+  implements
+    CoreService<{ getCoreUsageStatsSetup: () => CoreUsageStatsServiceSetup }, CoreUsageDataStart> {
   private elasticsearchConfig?: ElasticsearchConfigType;
   private configService: CoreContext['configService'];
   private httpConfig?: HttpConfigType;
@@ -72,10 +78,12 @@ export class CoreUsageDataService implements CoreService<void, CoreUsageDataStar
   private opsMetrics?: OpsMetrics;
   private kibanaConfig?: KibanaConfigType;
   private coreUsageStatsClient?: CoreUsageStatsClient;
+  private usageStatsService: CoreUsageStatsService;
 
   constructor(core: CoreContext) {
     this.configService = core.configService;
     this.stop$ = new Subject();
+    this.usageStatsService = new CoreUsageStatsService(core);
   }
 
   private async getSavedObjectIndicesUsageData(
@@ -239,13 +247,15 @@ export class CoreUsageDataService implements CoreService<void, CoreUsageDataStar
     };
   }
 
-  setup({ metrics, coreUsageStats }: SetupDeps) {
+  setup({ metrics, savedObjectsStartPromise }: SetupDeps) {
     metrics
       .getOpsMetrics$()
       .pipe(takeUntil(this.stop$))
       .subscribe((opsMetrics) => (this.opsMetrics = opsMetrics));
 
-    this.coreUsageStatsClient = coreUsageStats.getClient();
+    const usageStatsSetup = this.usageStatsService.setup({ savedObjectsStartPromise });
+
+    this.coreUsageStatsClient = usageStatsSetup.getClient();
 
     this.configService
       .atPath<ElasticsearchConfigType>('elasticsearch')
@@ -281,6 +291,12 @@ export class CoreUsageDataService implements CoreService<void, CoreUsageDataStar
       .subscribe((config) => {
         this.kibanaConfig = config;
       });
+
+    return {
+      getCoreUsageStatsSetup: () => {
+        return usageStatsSetup;
+      },
+    };
   }
 
   start({ savedObjects, elasticsearch }: StartDeps) {
